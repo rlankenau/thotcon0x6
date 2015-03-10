@@ -81,6 +81,7 @@ void loop(void) {
 //  int Signal_4 [20] = {236,54,62,54,62,56,60,56,60,56,62,54,62,54,62,54,120,56};  
   Serial.println("Sending Signal 1");
   Send_Signal_1();
+  delay(10000);
   Serial.println("Sending Signal 2");
   Send_Signal_2();
   Serial.println("Listening for IR");
@@ -88,16 +89,18 @@ void loop(void) {
   //printpulses();
   //convert_to_array();
   //Serial.println("Got one signal I need one more to match against:");
-  //delay(500);
+  //delay(5000);
   //numberpulses = listenForIR();
   //Serial.println("I got a second signal let me see if they match");
   if(IRcompare(numberpulses, Signal_1,25)){
       Serial.println("I heard Signal 1");
       blinkPattern(ledPin,3,500);
+      // Replace Above with Nixie functions you will need to call all nixe setup in the function below in order for it to terminate and not affect PWM for sending IR codes
   }
   else if(IRcompare(numberpulses, Signal_2,25)){
       Serial.println("I heard Signal 2");
       blinkPattern(ledPin,6,300);
+      // Replace Above with Nixie functions you will need to call all nixe setup in the function below in order for it to terminate and not affect PWM for sending IR codes
   }
 //  else if(IRcompare(numberpulses, Signal_3,25)){
 //      Serial.println("I heard Signal 2");
@@ -135,7 +138,7 @@ boolean IRcompare(int numpulses, int MY_Signal[], int refsize) {
 #endif
     } else {
 #ifdef DEBUG
-      Serial.print(" (x)");
+      Serial.println(" (x)");
 #endif
       // we didn't match perfectly, return a false match
       return false;
