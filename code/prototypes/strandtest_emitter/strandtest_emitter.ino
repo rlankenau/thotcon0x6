@@ -1,7 +1,10 @@
 #include <Adafruit_NeoPixel.h>
 #include <avr/power.h>
 
-#define PIN 4
+#define STRAND 4
+#define IR_E 10
+#define IR_R A0
+
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -10,7 +13,8 @@
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(6, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(6, STRAND, NEO_GRB + NEO_KHZ800);
+int serial_init = 0;
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -23,17 +27,102 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   // End of trinket special code
-
-
+  
+  pinMode(IR_R, INPUT_PULLUP);
+  
+  pinMode(IR_E, OUTPUT);
+  digitalWrite(IR_E, HIGH);
   strip.begin();
+  strip.setBrightness(20);
   strip.show(); // Initialize all pixels to 'off'
-  pinMode(10, OUTPUT);
+  
+  colorWipe(strip.Color(255,0,0), 20);
+  Serial.begin(2400);
+
+
 }
 
 void loop() {
-  digitalWrite(10, HIGH);
+  
+
+  
+  if(Serial) {
+      if(!serial_init)
+      {
+        serial_init = 1;
+        Serial.println("Welcome to Thotcon BBS v6.0\n");
+
+      }
+      int minimum=1024;
+      int maximum=0;
+      for(int i=0;i<10000;i++)
+      {
+
+        int reading = analogRead(IR_R);
+        maximum = max(reading, maximum);
+        minimum = min(reading, minimum);
+        int numPixels = reading/(1024/6);
+        for(uint16_t j=0; j<numPixels; j++) {
+          strip.setPixelColor(j, strip.Color(0,255,0));
+          strip.show();
+          Serial.print("[");
+          Serial.print(minimum);
+          Serial.print(',');
+          Serial.print(maximum);
+          Serial.print("] ");
+          Serial.println(reading);
+        }
+      }
+      colorWipe(strip.Color(0,255,0), 20);
+      delay(100);
+      clearPixels(100);
+      colorWipe(strip.Color(0,255,0), 20);
+      delay(100);
+      clearPixels(100);
+      colorWipe(strip.Color(0,255,0), 20);
+      delay(100);
+      clearPixels(100);
+    char c = Serial.read();
+    while(c) {
+    switch(c) {
+      case 'R':
+        colorWipe(strip.Color(255,0,0), 50);
+        break;
+      case 'G':
+        colorWipe(strip.Color(0,255,0), 50);
+        break;
+      case 'B':
+        colorWipe(strip.Color(0,0,255), 50);
+        break;
+      default:
+        clearPixels(0);
+        goto loop_begin;
+    }
+      delay(1000);
+      clearPixels(0);
+      delay(100);
+      c = Serial.read();
+    }
+  } else {
+      colorWipe(strip.Color(255,0,0), 20);
+      delay(100);
+            clearPixels(100);
+
+      colorWipe(strip.Color(255,0,0), 20);
+      delay(100);
+            clearPixels(100);
+
+      colorWipe(strip.Color(255,0,0), 20);
+      delay(100);
+            clearPixels(100);
+
+  }
+
+loop_begin:
+  Serial.println("Loop start");
+  digitalWrite(IR_E, LOW);
   delay(1000);
-  digitalWrite(10,LOW);
+  digitalWrite(IR_E,HIGH);
   delay(1000);
   // Some example procedures showing how to display to the pixels:
   colorWipe(strip.Color(255, 0, 0), 50); // Red
@@ -44,9 +133,10 @@ void loop() {
   theaterChase(strip.Color(127,   0,   0), 50); // Red
   theaterChase(strip.Color(  0,   0, 127), 50); // Blue
 
-  rainbow(20);
-  rainbowCycle(20);
-  theaterChaseRainbow(50);
+  rainbow(1);
+  rainbowCycle(1);
+  theaterChaseRainbow(1);
+  clearPixels(0);
 }
 
 // Fill the dots one after the other with a color
@@ -68,6 +158,13 @@ void rainbow(uint8_t wait) {
     strip.show();
     delay(wait);
   }
+}
+
+void clearPixels(uint8_t wait) {
+  for(int i=0;i<strip.numPixels();i++)
+    strip.setPixelColor(i,0);
+  strip.show();
+  delay(wait); 
 }
 
 // Slightly different, this makes the rainbow equally distributed throughout
