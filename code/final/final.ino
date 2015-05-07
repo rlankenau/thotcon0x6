@@ -3,12 +3,14 @@
 
 
 #define STRAND 4
+#define NUM_LEDS 6
 #define IR_E 10
 #define IR_R A0
 
 #define MAX_BRIGHTNESS 50
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(6, STRAND, NEO_GRB + NEO_KHZ800);
+CRGB leds [NUM_LEDS];
+
 int serial_init = 0;
 
 void setup()
@@ -19,9 +21,12 @@ void setup()
 	digitalWrite(IR_E, HIGH);
 
 	//Setup NeoPixel strip, turn everything off.
-	strip.begin();
-	strip.setBrightness(20);
-	strip.show();
+    FastLED.addLEDs<NEOPIXEL, STRAND>(leds, NUM_LEDS);
+	for(int i=0;i<NUM_LEDS;i++)
+    {
+        leds[i]=CRGB::Black;
+    }
+    FastLED.show();
 
 }
 
@@ -41,13 +46,23 @@ void loop()
         // Update EEPROM with IR data
     }
 
-    do_display();
+    for(int i=0;i<3;i++) 
+    {
+        do_display();
+    }
+}
 
+void set_led(int led, char color)
+{
+    leds[i].r =  b & 0xC0;
+    leds[i].g = (b & 0x30) << 2;
+    leds[i].b = (b & 0x0C) << 4;
+    leds[i].fadeLightBy((4-(b&0x3))<<6);
+    
 }
 
 void display_hacker(int offset)
 {
-    0x0F0F0F0FC3C3
 
 }
 
@@ -73,51 +88,76 @@ void display_root(int offset)
 
 void display_w88(int offset)
 {
-    char b = EEPROM.read(offset);
-    while(b!=0xF8)
-    {
-        strip.
-    }
+    char b = 0xF8;
+    do { 
+        for(int i=0;i<NUM_LEDS;i++)
+        {
+            b = EEPROM.read(offset);
+            if(b==0xF8)
+            {
+                break;
+            }
+            set_led(i,b);
+        }
+        FastLED.show();
+        delay(40);
+    } while(b!=0xF8);
         
 }
 
+void display_blue(int offset)
+{
 
+}
+
+void display_red(int offset)
+{
+
+}
 
 void do_display()
 {
     int badge_type = EEPROM.read(2);
     int offset = 0;
 
-    if(badge_type &= FLAG_BTYPE_HACKER)
+    if(badge_type & FLAG_BTYPE_HACKER)
     {
         offset = EEPROM.read(9);
-        display_hacker(offset);
+        display_hacker(COLOR_BLOCK_OFF + offset);
 
-    } else if (badge_type &= FLAG_BTYPE_OPER)
+    } else if (badge_type & FLAG_BTYPE_OPER)
     {
         offset = EEPROM.read(7);
-        display_oper(offset);
+        display_oper(COLOR_BLOCK_OFF + offset);
 
-    } else if (badge_type &= FLAG_BTYPE_VOICE)
+    } else if (badge_type & FLAG_BTYPE_VOICE)
     {
         offset = EEPROM.read(8);
-        display_voice(offset);
+        display_voice(COLOR_BLOCK_OFF + offset);
 
-    } else if (badge_type &= FLAG_BTYPE_VIP)
+    } else if (badge_type & FLAG_BTYPE_VIP)
     {
         offset = EEPROM.read(7);
-        display_vip(offset);
-    } else if (badge_type &= FLAG_BTYPE_ROOT)
+        display_vip(COLOR_BLOCK_OFF + offset);
+    } else if (badge_type & FLAG_BTYPE_ROOT)
     {
         offset = EEPROM.read(5);
-        display_root(offset);
-    } else if (badge_type &= FLAG_BTYPE_W88)
+        display_root(COLOR_BLOCK_OFF + offset);
+    } else if (badge_type & FLAG_BTYPE_W88)
     {
         offset = EEPROM.read(4);
-        display_w88(offset);
+        display_w88(COLOR_BLOCK_OFF + offset);
     }
 
     // Check whether you're on the blue team or red team.
+
+    if(badge_type & FLAG_MODE_BLUE)
+    {
+    
+    } else if (badge_type & FLAG_MODE_RED)
+    {
+       offset = EEPROM.read(
+    }
 
 
 // Return a pointer to a null terminated string copied from EEPROM
