@@ -29,3 +29,20 @@ void loop()
 {
 
 }
+
+// Return a pointer to a null terminated string copied from EEPROM
+// The return value points to a global buffer overwritten on every call
+const int BUFLEN=24;
+char buf[BUFLEN+1];
+char*
+eprom2string(int addr, int len)
+{
+   char* fill = buf;
+   int i;
+   for(i = addr; i<addr+len && i<addr+BUFLEN; i++, fill++) {
+       *fill = EEPROM.read(i);
+   }
+   buf[i] = 0;
+   return buf;
+}
+
