@@ -1,10 +1,25 @@
 #!/usr/bin/perl -w
 use Device::SerialPort;
+
+$system = `uname`;
+chomp $system;
+
+if ($system eq "Darwin")
+{
+    $devstr = "cu.usbmodem";
+    $progstr = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude";
+    $dudeconf = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf"
+} else {
+    $devstr = "ACM";
+    $progstr = "/usr/share/arduino/hardware/tools/avrdude";
+    $dudeconf = "/usr/share/arduino/hardware/tools/avrdude.conf";
+}
+
 my $try = 0;
 do {
     my $port = "";
     do {
-        $port = `ls /dev/* | grep ACM`;
+        $port = `ls /dev/* | grep $devstr`;
         chomp $port;
         print ".";
     } while ($port eq "");
@@ -22,12 +37,12 @@ do {
 
     $port="";
     do {
-        $port = `ls /dev/* | grep ACM`;
+        $port = `ls /dev/* | grep $devstr`;
         chomp $port;
         print ".";
     } while ($port eq "");
     sleep 1;
-    if (system("sudo /usr/share/arduino/hardware/tools/avrdude -C/usr/share/arduino/hardware/tools/avrdude.conf -v -patmega32u4 -cavr109 -b57600 -P$port @ARGV") == 0)
+    if (system("sudo $progstr -C$dudeconf -v -patmega32u4 -cstk500v1 -b19200 -P$port @ARGV") == 0)
     {
         print "\nSuccess!\n";
         exit;
