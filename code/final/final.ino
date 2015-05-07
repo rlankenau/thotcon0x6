@@ -1,6 +1,8 @@
-#include <FastLED.h>
+#include <EEPROM.h>
+#include "FastLED.h"
 #include <avr/power.h>
 
+#include "data.h"
 
 #define STRAND 4
 #define NUM_LEDS 6
@@ -15,18 +17,18 @@ int serial_init = 0;
 
 void setup()
 {
-
-	pinMode(IR_R, INPUT_PULLUP);
-	pinMode(IR_E, OUTPUT);
-	digitalWrite(IR_E, HIGH);
-
-	//Setup NeoPixel strip, turn everything off.
-    FastLED.addLEDs<NEOPIXEL, STRAND>(leds, NUM_LEDS);
-	for(int i=0;i<NUM_LEDS;i++)
-    {
-        leds[i]=CRGB::Black;
-    }
-    FastLED.show();
+  int i=0;
+  pinMode(IR_R, INPUT_PULLUP);
+  pinMode(IR_E, OUTPUT);
+  digitalWrite(IR_E, HIGH);
+  
+  //Setup NeoPixel strip, turn everything off.
+  FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
+  for(i=0;i<NUM_LEDS;i++)
+  {
+      leds[i] = CRGB::Black;
+  }
+  FastLED.show();
 
 }
 
@@ -54,10 +56,10 @@ void loop()
 
 void set_led(int led, char color)
 {
-    leds[i].r =  b & 0xC0;
-    leds[i].g = (b & 0x30) << 2;
-    leds[i].b = (b & 0x0C) << 4;
-    leds[i].fadeLightBy((4-(b&0x3))<<6);
+    leds[led].r =  color & 0xC0;
+    leds[led].g = (color & 0x30) << 2;
+    leds[led].b = (color & 0x0C) << 4;
+    leds[led].fadeLightBy((4-(color&0x3))<<6);
     
 }
 
@@ -153,11 +155,12 @@ void do_display()
 
     if(badge_type & FLAG_MODE_BLUE)
     {
-    
+      offset = EEPROM.read(10);
     } else if (badge_type & FLAG_MODE_RED)
     {
-       offset = EEPROM.read(
+      offset = EEPROM.read(11);
     }
+}
 
 
 // Return a pointer to a null terminated string copied from EEPROM

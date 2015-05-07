@@ -77,13 +77,3 @@
 
 #define COLOR_STREAM_END    0xF8
 
-typedef struct eeprom_badge_data_t_stct {
-    uint16_t id;
-    uint8_t  flags;
-    uint8_t  data;
-} eeprom_badge_date_t;
-
-typedef eeprom_screen_ident_t_stct {
-    uint8_t offset;
-    uint8_t len;
-}
