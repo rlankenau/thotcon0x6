@@ -7,8 +7,8 @@ chomp $system;
 if ($system eq "Darwin")
 {
     $devstr = "cu.usbmodem";
-    $progstr = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude";
-    $dudeconf = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf"
+    $progstr = "/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avrdude";
+    $dudeconf = "/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/etc/avrdude.conf"
 } else {
     $devstr = "ACM";
     $progstr = "/usr/share/arduino/hardware/tools/avrdude";
