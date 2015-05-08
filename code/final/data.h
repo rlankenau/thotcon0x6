@@ -9,18 +9,14 @@
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       |  Voice Offset | Hacker Offset |  Blue Offset  |   Red Offset  |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   12 |                             Color                           ...
+      |                             Color                           ...
       ...                            Data                             |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  268 | Scrn0 Offset  | Scrn0 Length  | Scrn1 Offset  | Scrn1 Length  |
+      | Scrn0 Offset  | Scrn1 Offset  | Scrn2 Offset  | Scrn3 Offset  |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      | Scrn2 Offset  | Scrn2 Length  | Scrn3 Offset  | Scrn3 Length  |
+      | Scrn4 Offset  | Scrn5 Offset  | Scrn6 Offset  | Scrn7 Offset  |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      | Scrn4 Offset  | Scrn4 Length  | Scrn5 Offset  | Scrn5 Length  |
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      | Scrn6 Offset  | Scrn6 Length  | Scrn7 Offset  | Scrn7 Length  |
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  286 |                             Screen                          ...
+      |                             Screen                          ...
       |                              Data                             |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
