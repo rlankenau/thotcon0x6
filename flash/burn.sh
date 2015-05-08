@@ -2,10 +2,10 @@
 
 case $1 in
     HACKER)
-    export BADGE_FLAGS="0x01"
+    export BADGE_FLAGS="0x20"
     ;;
     VOICE)
-    export BADGE_FLAGS="0x02"
+    export BADGE_FLAGS="0x10"
     ;;
     OPER)
     export BADGE_FLAGS="0x04"
@@ -14,10 +14,10 @@ case $1 in
     export BADGE_FLAGS="0x08"
     ;;
     ROOT)
-    export BADGE_FLAGS="0x10"
+    export BADGE_FLAGS="0x02"
     ;;
     W88)
-    export BADGE_FLAGS="0x20"
+    export BADGE_FLAGS="0x01"
     ;;
     *)
     echo "usage: $0 <HACKER|VOICE|OPER|VIP|ROOT|W88>"
