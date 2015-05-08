@@ -76,6 +76,26 @@ void display_voice(int offset)
 
 void display_vip(int offset)
 {
+    char b = 0xF8;
+    int curr_offset = offset;
+    for(int i=0;i<NUM_LEDS;i++)
+    {
+        int color = EEPROM.read(curent_offset);
+        /* Counterclockwise fill */
+        int prev_j = -1;
+        for(int j=NUM_LEDS-1;j>=i;j--)
+        {
+            if(prev_j!=-1)
+                set(prev_j, 0x00);
+            set_led(j, color);
+            FastLED.show();
+            prev_j = j;
+            delay(20);
+        }
+
+        delay(50);
+        current_offset++;
+    }
 
 }
 
