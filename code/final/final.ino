@@ -22,7 +22,7 @@ void setup()
   pinMode(IR_E, OUTPUT);
   digitalWrite(IR_E, HIGH);
   
-  Serial.begin(2500);
+  Serial.begin(2400);
   
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
