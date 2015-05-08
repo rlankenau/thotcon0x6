@@ -51,6 +51,7 @@ void loop()
     for(int i=0;i<3;i++) 
     {
         do_display();
+        delay(100);
     }
 }
 
@@ -68,11 +69,6 @@ void display_hacker(int offset)
 
 }
 
-void display_oper(int offset)
-{
-
-}
-
 void display_voice(int offset)
 {
 
@@ -85,16 +81,25 @@ void display_vip(int offset)
 
 void display_root(int offset)
 {
-
+    char b = 0xF8;
+    int curr_offset = offset;
+    do {
+        int pixel = random(0,NUM_LEDS); 
+        b = EEPROM.read(curr_offset++);
+        set_led(pixel, b);
+        FastLED.show();
+        delay(10);
+    } while(b!=0xF8);
 }
 
-void display_w88(int offset)
+void display_oper(int offset)
 {
     char b = 0xF8;
+    int curr_offset = offset;
     do { 
         for(int i=0;i<NUM_LEDS;i++)
         {
-            b = EEPROM.read(offset);
+            b = EEPROM.read(curr_offset++);
             if(b==0xF8)
             {
                 break;
@@ -107,14 +112,28 @@ void display_w88(int offset)
         
 }
 
-void display_blue(int offset)
+void display_team(int offset)
 {
-
+    char b = 0xF8;
+    int curr_offset = offset;
+    do {
+        b = EEPROM.read(curr_offset++);
+        for(int i=0;i<NUM_LEDS;i++) {
+            set_led(i, b);
+            FastLED.show();
+            delay(10);
+        }
+    } while(b!=0xF8);
+    
 }
 
-void display_red(int offset)
+void clear_display()
 {
-
+   for(int i=0;i<NUM_LEDS;i++)
+   {
+        set_led(i, 0x00);
+        FastLED.show();
+   } 
 }
 
 void do_display()
@@ -148,7 +167,7 @@ void do_display()
     } else if (badge_type & FLAG_BTYPE_W88)
     {
         offset = EEPROM.read(4);
-        display_w88(COLOR_BLOCK_OFF + offset);
+        display_oper(COLOR_BLOCK_OFF + offset);
     }
 
     // Check whether you're on the blue team or red team.
@@ -156,10 +175,13 @@ void do_display()
     if(badge_type & FLAG_MODE_BLUE)
     {
       offset = EEPROM.read(10);
+      display_team(offset);
     } else if (badge_type & FLAG_MODE_RED)
     {
       offset = EEPROM.read(11);
+      display_team(offset);
     }
+    clear_display();
 }
 
 
