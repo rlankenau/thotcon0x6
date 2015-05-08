@@ -22,6 +22,8 @@ void setup()
   pinMode(IR_E, OUTPUT);
   digitalWrite(IR_E, HIGH);
   
+  Serial.begin(2500);
+  
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
   for(i=0;i<NUM_LEDS;i++)
@@ -40,6 +42,7 @@ void loop()
     if(Serial)
     {
         // Do BBS stuff
+        Serial.println("Loop start");
     }
 
     //Read IR
@@ -64,11 +67,6 @@ void set_led(int led, char color)
     
 }
 
-void display_hacker(int offset)
-{
-
-}
-
 void display_voice(int offset)
 {
 
@@ -80,13 +78,13 @@ void display_vip(int offset)
     int curr_offset = offset;
     for(int i=0;i<NUM_LEDS;i++)
     {
-        int color = EEPROM.read(curent_offset);
+        int color = EEPROM.read(curr_offset);
         /* Counterclockwise fill */
         int prev_j = -1;
         for(int j=NUM_LEDS-1;j>=i;j--)
         {
             if(prev_j!=-1)
-                set(prev_j, 0x00);
+                set_led(prev_j, 0x00);
             set_led(j, color);
             FastLED.show();
             prev_j = j;
@@ -94,7 +92,7 @@ void display_vip(int offset)
         }
 
         delay(50);
-        current_offset++;
+        curr_offset++;
     }
 
 }
@@ -106,9 +104,13 @@ void display_root(int offset)
     do {
         int pixel = random(0,NUM_LEDS); 
         b = EEPROM.read(curr_offset++);
+        if(Serial)
+        {
+          Serial.print(curr_offset); Serial.print(": Got "); Serial.println(b, HEX);
+        }
         set_led(pixel, b);
         FastLED.show();
-        delay(10);
+        delay(1000);
     } while(b!=0xF8);
 }
 
@@ -194,6 +196,10 @@ void display_w88(int offset)
         for(int i=0;i<NUM_LEDS;i++)
         {
             b = EEPROM.read(curr_offset++);
+            if(Serial)
+            {
+              Serial.print(curr_offset); Serial.print(": Got "); Serial.println(b, HEX);
+            }
             if(b==0xF8)
             {
                 break;
@@ -201,8 +207,8 @@ void display_w88(int offset)
             set_led(i,b);
         }
         FastLED.show();
-        delay(40);
-    } while(b!=0xF8);
+        delay(1000);
+    } while(b!=0xF8 && curr_offset < 1024);
         
 }
 
@@ -233,12 +239,17 @@ void clear_display()
 void do_display()
 {
     int badge_type = EEPROM.read(2);
+    if(Serial)
+    {
+      Serial.print("Badge type is ");
+      Serial.println(badge_type, HEX);
+    }
     int offset = 0;
 
     if(badge_type & FLAG_BTYPE_HACKER)
     {
         offset = EEPROM.read(9);
-        display_hacker(COLOR_BLOCK_OFF + offset);
+        display_w88(COLOR_BLOCK_OFF + offset);
 
     } else if (badge_type & FLAG_BTYPE_OPER)
     {
@@ -261,7 +272,7 @@ void do_display()
     } else if (badge_type & FLAG_BTYPE_W88)
     {
         offset = EEPROM.read(4);
-        display_oper(COLOR_BLOCK_OFF + offset);
+        display_w88(COLOR_BLOCK_OFF + offset);
     }
 
     // Check whether you're on the blue team or red team.
@@ -269,11 +280,11 @@ void do_display()
     if(badge_type & FLAG_MODE_BLUE)
     {
       offset = EEPROM.read(10);
-      display_team(offset);
+      display_team(COLOR_BLOCK_OFF + offset);
     } else if (badge_type & FLAG_MODE_RED)
     {
       offset = EEPROM.read(11);
-      display_team(offset);
+      display_team(COLOR_BLOCK_OFF + offset);
     }
     clear_display();
 }
