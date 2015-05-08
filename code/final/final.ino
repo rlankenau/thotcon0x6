@@ -95,6 +95,80 @@ void display_root(int offset)
 void display_oper(int offset)
 {
     char b = 0xF8;
+    CRGB tmp[NUM_LEDS];
+
+    for(int i=0;i<NUM_LEDS;i++)
+    {
+        set_led(i, EEPROM.read(offset + i));    
+        tmp[i] = leds[i];
+    }
+
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(500);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(500);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(500);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(500);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(500);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    memcpy(tmp, leds, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+}
+
+void display_w88(int offset)
+{
+    char b = 0xF8;
     int curr_offset = offset;
     do { 
         for(int i=0;i<NUM_LEDS;i++)
