@@ -144,7 +144,7 @@ void BBS_show_menu()
               break; 
            }      
            case SCREEN_MESSAGES: {
-             // Needs cleve content
+             // Needs clever content
               break; 
            }
            case SCREEN_SYSINFO: {
@@ -192,7 +192,11 @@ byte BBS_handle_prompt(){
 }
 
 void loop(){
-   char type = 0x0;
+  char type = 0x0;  // serial input byte 
+  uint8_t p = 0x0;  // pixel
+  uint8_t b = 4;   // brightness
+  uint32_t hc = 0x000000; //hex color for pixel
+   
   if(Serial)
   {
     Serial.flush();
@@ -229,7 +233,35 @@ void loop(){
         }
         case 'c' :
         case 'C' : {
-              screen_state = SCREEN_COMMANDS;
+              if (screen_state == SCREEN_MAIN)
+                  screen_state = SCREEN_COMMANDS;
+              if (screen_state == SCREEN_LIGHT)
+              {
+                   Serial.print("\r\nInput Color value for pixel ");
+                   Serial.print(p,DEC);
+                   Serial.print(" {Red}: ");
+                   while(Serial.available()){
+                       uint8_t red = Serial.parseInt(); 
+                       Serial.print("\r\n {Green}: ");
+                       uint8_t green = Serial.parseInt(); 
+                       Serial.print("\r\n {Blue}: ");
+                       uint8_t blue = Serial.parseInt(); 
+                        if (Serial.read() == '\n') {
+                               red = 255 - constrain(red, 0, 255);
+                               green = 255 - constrain(green, 0, 255);
+                                blue = 255 - constrain(blue, 0, 255);
+                               leds[p].r = red;
+                               leds[p].g = green;
+                               leds[p].b = blue;
+
+                               Serial.print("\r\n Config val: 0x");
+                               Serial.print(red, HEX);
+                               Serial.print(green, HEX);
+                              Serial.println(blue, HEX);
+                             }  
+               
+                       }
+              } 
               break;
         }
         case 'q' :
@@ -237,7 +269,47 @@ void loop(){
              Serial.print("\033[2J");
              break;
         }
-        
+        case 'p' :
+        case 'P' :
+        {
+            
+            Serial.print("Select Pixel [0 - 6]:");
+            while (!Serial.available()){}
+            p = constrain((uint8_t)Serial.read(),0,6);
+            Serial.println(p);
+        }
+        case 'b' : 
+        case 'B' :
+        {
+             while(!Serial.available());
+             b = constrain(Serial.parseInt(),0,255);
+             Serial.print("Setting brightness level ");
+             Serial.println(b,DEC);
+             LEDS.setBrightness(b); 
+             break; 
+        }
+        case 'd' :
+        case 'D' :
+        {
+            if (screen_state == SCREEN_LIGHT)
+            {
+               if ( p == 0 ){
+                  Serial.println("Use [P] to select a pixel!");
+                  break;
+               }
+               if ( hc == 0 ){
+                 Serial.println("Use [C] to set a color value");
+                  break;
+               }
+              FastLED.show();  
+           }
+            else {
+              Serial.println("Invalid Entry!");
+              Serial.flush();
+            }
+          
+            break;  
+        }
               /*case 'H':{
            Serial.println("Hacker");
            for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
