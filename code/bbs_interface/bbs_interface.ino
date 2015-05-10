@@ -58,6 +58,7 @@ CRGB leds[NUM_LEDS];
 
 uint8_t screen_state = SCREEN_MAIN;
 int peekAddress = 4;
+int peekLen = 32;
 void setup() {
   pinMode(LED_PIN,OUTPUT);
   pinMode(IR_R, INPUT_PULLUP);
@@ -435,6 +436,7 @@ ddt_peekpoke()
 {
   char command;
   peekAddress = 4;
+  peekLen = 32;
   Serial.write("1K DDT-W VER 0.1\r\n");
   Serial.write("commands: \r\ndisplay: d[addr][,len]\r\nsubstitute: s[addr]\r\n\t. to exit\r\n");
   while(true) {
@@ -449,7 +451,7 @@ ddt_peekpoke()
         break;
       case 's':
       case 'S': // Enter memory modification: display addr and value, modify with new or cr, end on .
-        ddt_substitute(peekAddress);
+        ddt_substitute();
         break;
       case 'k':
       case 'K':
@@ -486,15 +488,29 @@ ddt_display() {
   // '\n', or 'xx{0,3}\n' or 'xx,x{0,3}\n'
   ddt_readLine();
   char* l=line;
- // Serial.println("display");
-  Serial.println(l);
-   if(*l == '\n' || *l == '\r') {
-    ddt_printLines(peekAddress,256);
-    peekAddress+=256;
-  } else {
-    // an address
-    
+  if(isxdigit(*l)) {
+    // a hex address
+    peekAddress = 0;
+    int i;
+    for(i = 0; i<4 && isxdigit(l[i]); i++) {
+      peekAddress <<= 4;
+      byte x;
+      if(l[i] < 0x3a) {
+        x = l[i]-0x30;
+      } else if (l[i] < 0x47) {
+        x = l[i]-0x41;
+      } else if (l[i] < 0x67) {
+        x = l[i]-0x61;
+      }
+      peekAddress |= x;
+    }
+    if (l[i++] == ',') {
+      // peek length
+      peekLen = atoi(&l[i]);
+    }
   }
+  ddt_printLines(peekAddress,peekLen);
+  peekAddress+=peekLen;
 }
 
 // ddt format print starting at addr for len bytes
@@ -542,13 +558,13 @@ ddt_printAddr(int addr)
 }
 
 void
-ddt_substitute(int addr)
+ddt_substitute()
 {
   Serial.read(); // remove initial 'cr'
   Serial.println();
   while(true) {
-    ddt_printAddr(addr);
-    Serial.print(EEPROM.read(addr), HEX);
+    ddt_printAddr(peekAddress);
+    Serial.print(EEPROM.read(peekAddress), HEX);
     Serial.print(" : ");
     int hexVal=-1;
     int readChar = -1;
@@ -573,17 +589,18 @@ ddt_substitute(int addr)
           if(hexVal==-1) hexVal = 0;
           hexVal = (hexVal << 4) | (readChar & 0xf);
           break;
-        case '\n':
+        case '\r':
+          hexVal = (hexVal==-1) ? -2 : hexVal;
           break;
         default:
-          break;
+          return;
       }
     }
     Serial.println();
     if(hexVal==-1) return;
-    EEPROM.write(addr, char(hexVal));
+    if(hexVal>=0) EEPROM.write(peekAddress, char(hexVal));
     hexVal = -1;
-    addr++;
+    peekAddress++;
   }
 }
 
