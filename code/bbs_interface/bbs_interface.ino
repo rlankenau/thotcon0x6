@@ -574,6 +574,7 @@ ddt_substitute()
   Serial.read(); // remove initial 'cr'
   Serial.println();
   while(true) {
+    if(peekAddress < 4 || peekAddress > 1023) peekAddress = 4;
     ddt_printAddr(peekAddress);
     Serial.print(EEPROM.read(peekAddress), HEX);
     Serial.print(" : ");
