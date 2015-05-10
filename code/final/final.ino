@@ -63,22 +63,37 @@ void set_led(int led, char color)
     leds[led].r =  color & 0xC0;
     leds[led].g = (color & 0x30) << 2;
     leds[led].b = (color & 0x0C) << 4;
-    leds[led].fadeLightBy((4-(color&0x3))<<6);
+    leds[led] >>= (4-(color&0x3));
     
 }
 
+char voice_order[] = {0x05,0x06,0x04,0x01,0x03,0x02};
+
 void display_voice(int offset)
 {
-
+    char color = 0xF8;
+    char curr_offset = offset;
+    do {
+        for(int i =0;i<NUM_LEDS;i++)
+        {
+            color = EEPROM.read(curr_offset);
+            if(color==0xF8)
+                break;
+            set_led(voice_order[i], color);
+        }
+        FastLED.show();
+        delay(200);
+    } while(color!=0xF8);
+    FastLED.clear();
+    
 }
 
 void display_vip(int offset)
 {
-    char b = 0xF8;
     int curr_offset = offset;
     for(int i=0;i<NUM_LEDS;i++)
     {
-        int color = EEPROM.read(curr_offset);
+        char color = EEPROM.read(curr_offset);
         /* Counterclockwise fill */
         int prev_j = -1;
         for(int j=NUM_LEDS-1;j>=i;j--)
@@ -103,15 +118,12 @@ void display_root(int offset)
     int curr_offset = offset;
     do {
         int pixel = random(0,NUM_LEDS); 
-        b = EEPROM.read(curr_offset++);
-        if(Serial)
-        {
-          Serial.print(curr_offset); Serial.print(": Got "); Serial.println(b, HEX);
-        }
+        b = EEPROM.read(curr_offset);
         set_led(pixel, b);
         FastLED.show();
         delay(1000);
-    } while(b!=0xF8);
+        curr_offset++;
+    } while(b!=0xF8 && curr_offset < 0xD4);
 }
 
 void display_oper(int offset)
@@ -195,20 +207,17 @@ void display_w88(int offset)
     do { 
         for(int i=0;i<NUM_LEDS;i++)
         {
-            b = EEPROM.read(curr_offset++);
-            if(Serial)
-            {
-              Serial.print(curr_offset); Serial.print(": Got "); Serial.println(b, HEX);
-            }
+            b = EEPROM.read(curr_offset);
             if(b==0xF8)
             {
                 break;
             }
             set_led(i,b);
+            curr_offset++;
         }
         FastLED.show();
         delay(1000);
-    } while(b!=0xF8 && curr_offset < 1024);
+    } while(b!=0xF8 && curr_offset < 0xD4);
         
 }
 
