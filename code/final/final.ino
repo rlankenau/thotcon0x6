@@ -28,6 +28,7 @@ void setup()
   
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
+  FastLED.setBrightness(128);
   for(i=0;i<NUM_LEDS;i++)
   {
       leds[i] = CRGB::Black;
@@ -65,28 +66,29 @@ void set_led(int led, char color)
     leds[led].r =  color & 0xC0;
     leds[led].g = (color & 0x30) << 2;
     leds[led].b = (color & 0x0C) << 4;
-    leds[led] >>= (4-(color&0x3));
+    leds[led] >>= (5-(color&0x3));
     
 }
 
-char voice_order[] = {0x05,0x06,0x04,0x01,0x03,0x02};
-
 void display_voice(int offset)
 {
-    char color = 0xF8;
-    char curr_offset = offset;
-    do {
-        for(int i =0;i<NUM_LEDS;i++, curr_offset++)
-        {
-            color = EEPROM.read(curr_offset);
-            if(color==0xF8)
-                break;
-            set_led(voice_order[i], color);
-        }
-        FastLED.show();
-        delay(200);
-    } while(color!=0xF8);
-    FastLED.clear();
+    for(int i=0;i<3;i++) {
+      char color = TERM;
+      char curr_offset = offset;
+      do {
+          for(int i =0;i<NUM_LEDS;i++, curr_offset++)
+          {
+              color = EEPROM.read(curr_offset);
+              if(color==TERM)
+                  break;
+              set_led(i, color);
+          }
+          FastLED.show();
+          delay(200);
+      } while(color!=TERM);
+      FastLED.clear();
+      delay(500);
+    }
     
 }
 
@@ -116,7 +118,7 @@ void display_vip(int offset)
 
 void display_root(int offset)
 {
-    char b = 0xF8;
+    char b = TERM;
     int curr_offset = offset;
     do {
         int pixel = random(0,NUM_LEDS); 
@@ -134,7 +136,7 @@ void display_root(int offset)
 
 void display_oper(int offset)
 {
-    char b = 0xF8;
+
     CRGB tmp[NUM_LEDS];
 
     for(int i=0;i<NUM_LEDS;i++)
@@ -210,13 +212,13 @@ void display_oper(int offset)
 
 void display_w88(int offset)
 {
-    char b = 0xF8;
+    char b = TERM;
     int curr_offset = offset;
     do { 
         for(int i=0;i<NUM_LEDS;i++)
         {
             b = EEPROM.read(curr_offset);
-            if(b==0xF8)
+            if(b==TERM)
             {
                 break;
             }
@@ -225,22 +227,26 @@ void display_w88(int offset)
         }
         FastLED.show();
         delay(1000);
-    } while(b!=0xF8 && curr_offset < 0xD4);
+    } while(b!=TERM && curr_offset < 0xD4);
         
 }
 
 void display_team(int offset)
 {
-    char b = 0xF8;
-    int curr_offset = offset;
-    do {
-        b = EEPROM.read(curr_offset++);
-        for(int i=0;i<NUM_LEDS;i++) {
-            set_led(i, b);
-            FastLED.show();
-            delay(10);
-        }
-    } while(b!=0xF8);
+    for(int i=0;i<3;i++) {
+      char b = TERM;
+      int curr_offset = offset;
+      do {
+          b = EEPROM.read(curr_offset++);
+          if(b==TERM)
+            break;
+          for(int i=0;i<NUM_LEDS;i++) {
+              set_led(i, b);
+              FastLED.show();
+              delay(10);
+          }
+      } while(b!=TERM);
+    }
     
 }
 
