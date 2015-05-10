@@ -19,6 +19,12 @@ case $1 in
     W88)
     export BADGE_FLAGS="0x01"
     ;;
+    RED)
+    export BADGE_FLAGS="0x41"
+    ;;
+    BLUE)
+    export BADGE_FLAGS="0x82"
+    ;;
     *)
     echo "usage: $0 <HACKER|VOICE|OPER|VIP|ROOT|W88>"
     exit

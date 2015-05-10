@@ -9,6 +9,8 @@
 #define IR_E 10
 #define IR_R A0
 
+#define TERM (char)0xF8
+
 #define MAX_BRIGHTNESS 50
 
 CRGB leds [NUM_LEDS];
@@ -22,10 +24,11 @@ void setup()
   pinMode(IR_E, OUTPUT);
   digitalWrite(IR_E, HIGH);
   
-  Serial.begin(2400);
+  //Serial.begin(2400);
   
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
+  FastLED.setBrightness(128);
   for(i=0;i<NUM_LEDS;i++)
   {
       leds[i] = CRGB::Black;
@@ -42,7 +45,7 @@ void loop()
     if(Serial)
     {
         // Do BBS stuff
-        Serial.println("Loop start");
+        //Serial.println("Loop start");
     }
 
     //Read IR
@@ -63,28 +66,29 @@ void set_led(int led, char color)
     leds[led].r =  color & 0xC0;
     leds[led].g = (color & 0x30) << 2;
     leds[led].b = (color & 0x0C) << 4;
-    leds[led] >>= (4-(color&0x3));
+    leds[led] >>= (5-(color&0x3));
     
 }
 
-char voice_order[] = {0x05,0x06,0x04,0x01,0x03,0x02};
-
 void display_voice(int offset)
 {
-    char color = 0xF8;
-    char curr_offset = offset;
-    do {
-        for(int i =0;i<NUM_LEDS;i++)
-        {
-            color = EEPROM.read(curr_offset);
-            if(color==0xF8)
-                break;
-            set_led(voice_order[i], color);
-        }
-        FastLED.show();
-        delay(200);
-    } while(color!=0xF8);
-    FastLED.clear();
+    for(int i=0;i<3;i++) {
+      char color = TERM;
+      char curr_offset = offset;
+      do {
+          for(int i =0;i<NUM_LEDS;i++, curr_offset++)
+          {
+              color = EEPROM.read(curr_offset);
+              if(color==TERM)
+                  break;
+              set_led(i, color);
+          }
+          FastLED.show();
+          delay(200);
+      } while(color!=TERM);
+      FastLED.clear();
+      delay(500);
+    }
     
 }
 
@@ -99,14 +103,14 @@ void display_vip(int offset)
         for(int j=NUM_LEDS-1;j>=i;j--)
         {
             if(prev_j!=-1)
-                set_led(prev_j, 0x00);
-            set_led(j, color);
+                set_led((prev_j+5)%6, 0x00);
+            set_led((j+5)%6, color);
             FastLED.show();
             prev_j = j;
-            delay(20);
+            delay(100);
         }
 
-        delay(50);
+        delay(200);
         curr_offset++;
     }
 
@@ -114,21 +118,25 @@ void display_vip(int offset)
 
 void display_root(int offset)
 {
-    char b = 0xF8;
+    char b = TERM;
     int curr_offset = offset;
     do {
         int pixel = random(0,NUM_LEDS); 
         b = EEPROM.read(curr_offset);
+        if(b==TERM)
+            break;
         set_led(pixel, b);
         FastLED.show();
-        delay(1000);
+        delay(50);
+        pixel = random(0, NUM_LEDS);
+        set_led(pixel, 0x00);
         curr_offset++;
-    } while(b!=0xF8 && curr_offset < 0xD4);
+    } while(curr_offset < 0xD4);
 }
 
 void display_oper(int offset)
 {
-    char b = 0xF8;
+
     CRGB tmp[NUM_LEDS];
 
     for(int i=0;i<NUM_LEDS;i++)
@@ -143,72 +151,74 @@ void display_oper(int offset)
     FastLED.show();
     delay(200);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(200);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(200);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(200);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(500);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(500);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(200);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(500);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(200);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(500);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
-    delay(200);
-
-    memcpy(tmp, leds, sizeof(leds));
-    FastLED.show();
-    delay(200);
-    memset(leds, 0, sizeof(leds));
-    FastLED.show();
     delay(500);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(200);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(200);
 
-    memcpy(tmp, leds, sizeof(leds));
+    memcpy(leds, tmp, sizeof(leds));
     FastLED.show();
     delay(200);
     memset(leds, 0, sizeof(leds));
     FastLED.show();
     delay(200);
+
+    memcpy(leds, tmp, sizeof(leds));
+    FastLED.show();
+    delay(200);
+    memset(leds, 0, sizeof(leds));
+    FastLED.show();
+    delay(200);
+
+    delay(1000);
 }
 
 void display_w88(int offset)
 {
-    char b = 0xF8;
+    char b = TERM;
     int curr_offset = offset;
     do { 
         for(int i=0;i<NUM_LEDS;i++)
         {
             b = EEPROM.read(curr_offset);
-            if(b==0xF8)
+            if(b==TERM)
             {
                 break;
             }
@@ -217,32 +227,27 @@ void display_w88(int offset)
         }
         FastLED.show();
         delay(1000);
-    } while(b!=0xF8 && curr_offset < 0xD4);
+    } while(b!=TERM && curr_offset < 0xD4);
         
 }
 
 void display_team(int offset)
 {
-    char b = 0xF8;
-    int curr_offset = offset;
-    do {
-        b = EEPROM.read(curr_offset++);
-        for(int i=0;i<NUM_LEDS;i++) {
-            set_led(i, b);
-            FastLED.show();
-            delay(10);
-        }
-    } while(b!=0xF8);
+    for(int i=0;i<3;i++) {
+      char b = TERM;
+      int curr_offset = offset;
+      do {
+          b = EEPROM.read(curr_offset++);
+          if(b==TERM)
+            break;
+          for(int i=0;i<NUM_LEDS;i++) {
+              set_led(i, b);
+              FastLED.show();
+              delay(10);
+          }
+      } while(b!=TERM);
+    }
     
-}
-
-void clear_display()
-{
-   for(int i=0;i<NUM_LEDS;i++)
-   {
-        set_led(i, 0x00);
-        FastLED.show();
-   } 
 }
 
 void do_display()
@@ -250,8 +255,8 @@ void do_display()
     int badge_type = EEPROM.read(2);
     if(Serial)
     {
-      Serial.print("Badge type is ");
-      Serial.println(badge_type, HEX);
+      //Serial.print("Badge type is ");
+      //Serial.println(badge_type, HEX);
     }
     int offset = 0;
 
@@ -262,7 +267,7 @@ void do_display()
 
     } else if (badge_type & FLAG_BTYPE_OPER)
     {
-        offset = EEPROM.read(7);
+        offset = EEPROM.read(6);
         display_oper(COLOR_BLOCK_OFF + offset);
 
     } else if (badge_type & FLAG_BTYPE_VOICE)
@@ -295,7 +300,7 @@ void do_display()
       offset = EEPROM.read(11);
       display_team(COLOR_BLOCK_OFF + offset);
     }
-    clear_display();
+    FastLED.clear();
 }
 
 
