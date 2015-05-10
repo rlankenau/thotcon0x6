@@ -43,9 +43,6 @@ int p = 0x0;  // pixel
 uint8_t b = 4;   // brightness
 uint32_t hc = 0x000000; //hex color for pixel
 
-IRrecv My_Receiver(IR_R);
-IRdecode My_Decoder;
-
 typedef struct eeprom_badge_data_t_stct {
     uint16_t id;
     uint8_t  flags;
@@ -60,7 +57,11 @@ typedef struct eeprom_screen_ident_t_stct {
 CRGB leds[NUM_LEDS];
 
 uint8_t screen_state = SCREEN_MAIN;
-
+int peekAddress = 4;
+<<<<<<< Updated upstream
+int peekLen = 32;
+=======
+>>>>>>> Stashed changes
 void setup() {
   pinMode(LED_PIN,OUTPUT);
   pinMode(IR_R, INPUT_PULLUP);
@@ -176,7 +177,7 @@ void BBS_show_menu()
               break; 
            }
            case SCREEN_COMMANDS: {
-              Serial.println("\t\t\t\t-=[System Commands]=-\r\n\t\t\tP[E]ek\t\tP[O]ke\t\tBac[K]\r\n");
+              Serial.println("\t\t\t\t-=[System Commands]=-\r\n\t\t\tP[E]ek/Poke\t\tBac[K]\r\n");
               break; 
            }
            default: 
@@ -253,8 +254,9 @@ void loop(){
         
         case 'c' :
         case 'C' : {
-              if (screen_state == SCREEN_MAIN)
+              if (screen_state == SCREEN_MAIN) {
                   screen_state = SCREEN_COMMANDS;
+              }
               if (screen_state == SCREEN_LIGHT)
               {
                    Serial.print("\r\nInput Color value for pixel ");
@@ -352,7 +354,81 @@ void loop(){
           
             break;  
         }
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
          
+=======
+>>>>>>> Stashed changes
+              /*case 'H':{
+           Serial.println("Hacker");
+           for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+              leds[pixel] = CRGB::White;
+              FastLED.show();
+              leds[pixel] = CRGB::Black;
+              delay(500);
+           }
+           break;
+        }
+        Serial.flush();  
+        case 'V':{
+          Serial.println("Voice");
+          for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+              leds[pixel] = CRGB::Blue;
+              FastLED.show();
+              leds[pixel] = CRGB::Black;
+              delay(500);
+           }
+           break;
+        }
+        Serial.flush();
+        case 'O':
+        {
+          Serial.println("Oper");
+          for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+              leds[pixel] = CRGB::Red;
+              FastLED.show();
+              leds[pixel] = CRGB::Black;
+              delay(500);
+           }
+           break;
+        }
+        Serial.flush();
+      case 'X':
+      {
+         Serial.println("VIP");
+         for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+              leds[pixel] = CRGB::Green;
+              FastLED.show();
+              leds[pixel] = CRGB::Black;
+              delay(500);
+         }
+         Serial.flush();
+         break;
+      }
+        case 'R':
+        {
+         Serial.println("Root");
+         Serial.flush();
+         for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+              Serial.println(pixel);
+              leds[pixel] = CRGB::Yellow;
+              FastLED.show();
+              leds[pixel] = CRGB::Black;
+              delay(500); 
+              
+           }
+           Serial.flush();
+           break;
+        }*/
+        case 'e':
+        case 'E':
+          ddt_peekpoke();
+          break;
+<<<<<<< Updated upstream
+=======
+>>>>>>> 58b71bf4987e5d4a547af3ac8d865bcbfbf1653f
+>>>>>>> Stashed changes
         case '\033':
         {
            Serial.flush(); 
@@ -378,6 +454,219 @@ void loop(){
   } // if read
  
 } // loop()
+void
+ddt_peekpoke()
+{
+  char command;
+  peekAddress = 4;
+<<<<<<< Updated upstream
+  peekLen = 32;
+=======
+>>>>>>> Stashed changes
+  Serial.write("1K DDT-W VER 0.1\r\n");
+  Serial.write("commands: \r\ndisplay: d[addr][,len]\r\nsubstitute: s[addr]\r\n\t. to exit\r\n");
+  while(true) {
+    Serial.write("- ");
+    while(Serial.available() <= 0) ;
+    command = Serial.read();
+    Serial.print(command);
+    switch(command) {
+      case 'd': // Display memory - addr xx xx xx cccccccc
+      case 'D':
+        ddt_display();
+        break;
+      case 's':
+      case 'S': // Enter memory modification: display addr and value, modify with new or cr, end on .
+<<<<<<< Updated upstream
+        ddt_substitute();
+=======
+        ddt_substitute(peekAddress);
+>>>>>>> Stashed changes
+        break;
+      case 'k':
+      case 'K':
+        return;
+    }
+    while(Serial.read()>0) ; // ToDo: get rid of when commands written
+  }
+}
+// Read a line terminated by a cr
+// returns only on first CR or 15 characters
+// return pointer to null-terminated string
+// Line can be max 15 chars long
+char line[16];
+char*
+ddt_readLine()
+{
+  while(Serial.available()==0) ;
+  for(int i = 0; i<15; i++) {
+    line[i] = Serial.read();
+    Serial.write(line[i]);
+    if(line[i]=='\r') {
+      line[i+1] = '\0';
+      Serial.write(line);
+      Serial.println();
+      return line;
+    }
+    while(Serial.available()==0) ;
+  }
+  line[15] = '\0';
+  return line;
+}
+void
+ddt_display() {
+  // '\n', or 'xx{0,3}\n' or 'xx,x{0,3}\n'
+  ddt_readLine();
+  char* l=line;
+<<<<<<< Updated upstream
+  if(isxdigit(*l)) {
+    // a hex address
+    peekAddress = 0;
+    int i;
+    for(i = 0; i<4 && isxdigit(l[i]); i++) {
+      peekAddress <<= 4;
+      byte x;
+      if(l[i] < 0x3a) {
+        x = l[i]-0x30;
+      } else if (l[i] < 0x47) {
+        x = l[i]-0x41;
+      } else if (l[i] < 0x67) {
+        x = l[i]-0x61;
+      }
+      peekAddress |= x;
+    }
+    if (l[i++] == ',') {
+      // peek length
+      peekLen = atoi(&l[i]);
+    }
+  }
+  ddt_printLines(peekAddress,peekLen);
+  peekAddress+=peekLen;
+=======
+ // Serial.println("display");
+  Serial.println(l);
+   if(*l == '\n' || *l == '\r') {
+    ddt_printLines(peekAddress,256);
+    peekAddress+=256;
+  } else {
+    // an address
+    
+  }
+>>>>>>> Stashed changes
+}
+
+// ddt format print starting at addr for len bytes
+// aaaa xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx cccccccccccccccc
+void
+ddt_printLines(int addr, int len)
+{
+  int current = addr;
+  int end = addr+len;
+  char clist[17];
+  int i;
+  while(current < end) {
+    // initialize the character list at end of line
+    for(i=0; i<16; i++) clist[i] = ' ';
+    clist[16] = '\0';
+     
+    ddt_printAddr(current-current%16);
+    for(i=0; i<current%16; i++) {
+      clist[i] = ' ';
+      Serial.print("   ");
+    }
+    do {
+      char e_val = EEPROM.read(current);
+      clist[i] = isprint(e_val) ? e_val : '.';
+      Serial.print(byte(e_val&0xff), HEX);
+      Serial.print(' ');
+      current++;
+      i++;
+    } while(current%16 != 0 && current < end);
+    Serial.print(clist);
+    Serial.println();
+  }
+}
+
+void
+ddt_printAddr(int addr)
+{
+  char addr_str[5];
+  char lead[9];
+  strlcpy(lead, "0000", 9);
+  itoa(addr, addr_str, 16);
+  strlcat(lead, addr_str , 9);
+  Serial.print(&lead[strlen(addr_str)]);
+  Serial.write(' ');
+}
+
+void
+<<<<<<< Updated upstream
+ddt_substitute()
+=======
+ddt_substitute(int addr)
+>>>>>>> Stashed changes
+{
+  Serial.read(); // remove initial 'cr'
+  Serial.println();
+  while(true) {
+<<<<<<< Updated upstream
+    ddt_printAddr(peekAddress);
+    Serial.print(EEPROM.read(peekAddress), HEX);
+=======
+    ddt_printAddr(addr);
+    Serial.print(EEPROM.read(addr), HEX);
+>>>>>>> Stashed changes
+    Serial.print(" : ");
+    int hexVal=-1;
+    int readChar = -1;
+    while (readChar != '\r') {
+      while(Serial.available() == 0) ;
+      readChar = Serial.read();
+      Serial.print(char(readChar));
+      switch(readChar) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+          readChar = readChar - 0x30;
+          if(hexVal==-1) hexVal = 0;
+          hexVal = (hexVal << 4) | (readChar & 0xf);
+          break;
+        case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+          readChar = readChar - 'A' + 10;
+          if(hexVal==-1) hexVal = 0;
+          hexVal = (hexVal << 4) | (readChar & 0xf);
+          break;
+        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+          readChar = readChar - 'a' + 10;
+          if(hexVal==-1) hexVal = 0;
+          hexVal = (hexVal << 4) | (readChar & 0xf);
+          break;
+<<<<<<< Updated upstream
+        case '\r':
+          hexVal = (hexVal==-1) ? -2 : hexVal;
+          break;
+        default:
+          return;
+=======
+        case '\n':
+          break;
+        default:
+          break;
+>>>>>>> Stashed changes
+      }
+    }
+    Serial.println();
+    if(hexVal==-1) return;
+<<<<<<< Updated upstream
+    if(hexVal>=0) EEPROM.write(peekAddress, char(hexVal));
+    hexVal = -1;
+    peekAddress++;
+=======
+    EEPROM.write(addr, char(hexVal));
+    hexVal = -1;
+    addr++;
+>>>>>>> Stashed changes
+  }
+}
 
 
 
