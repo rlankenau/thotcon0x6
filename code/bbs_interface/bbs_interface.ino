@@ -43,6 +43,9 @@ int p = 0x0;  // pixel
 uint8_t b = 4;   // brightness
 uint32_t hc = 0x000000; //hex color for pixel
 
+IRrecv My_Receiver(IR_R);
+IRdecode My_Decoder;
+
 typedef struct eeprom_badge_data_t_stct {
     uint16_t id;
     uint8_t  flags;
@@ -80,6 +83,7 @@ void setup() {
       leds[pixel] = CRGB::Black;
       delay(500);
    }
+   Serial.setTimeout(500);
    Serial.begin(2400); 
   
 }
@@ -213,7 +217,7 @@ void loop(){
   {
     Serial.flush();
     BBS_display_banner();
-    //Serial.println("Connected to THOTCON 0x6");
+   
     
       BBS_show_menu();
      // wait for the strokes
@@ -229,20 +233,24 @@ void loop(){
                screen_state = SCREEN_LIGHT;        
                break;
         }
+        
         case 'k' :
         case 'K' : {
                screen_state= SCREEN_MAIN;
                break;
         }
+        
         case '*' : {
                screen_state = SCREEN_SYSOP;
                break;
         }
+        
         case 'i':
         case 'I' : {
                screen_state = SCREEN_SYSINFO;
               break;
         }
+        
         case 'c' :
         case 'C' : {
               if (screen_state == SCREEN_MAIN)
@@ -291,11 +299,12 @@ void loop(){
              Serial.print("\033[2J");
              break;
         }
+        
         case 'p' :
         case 'P' :
         {
-            Serial.setTimeout(300);
-            Serial.print("Select Pixel [0 - 6]:");
+            Serial.setTimeout(500);
+            Serial.print("Select Pixel [1 - 6]:");
             while (!Serial.available()){}
             //if (Serial.read() == '\n')
                    Serial.readBytesUntil('\n',buff,1);
@@ -304,11 +313,12 @@ void loop(){
             Serial.println(p);
             break;
         }
+        
         case 'b' : 
         case 'B' :
         {
              Serial.print("Enter Brightness [1 - 128]: ");
-             Serial.setTimeout(300);
+             Serial.setTimeout(500);
              while(!Serial.available());
              b = Serial.parseInt();
              b = constrain(b,1,128);
@@ -317,6 +327,7 @@ void loop(){
              LEDS.setBrightness(b); 
              break; 
         }
+        
         case 'd' :
         case 'D' :
         {
@@ -341,79 +352,21 @@ void loop(){
           
             break;  
         }
-              /*case 'H':{
-           Serial.println("Hacker");
-           for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
-              leds[pixel] = CRGB::White;
-              FastLED.show();
-              leds[pixel] = CRGB::Black;
-              delay(500);
-           }
-           break;
-        }
-        Serial.flush();  
-        case 'V':{
-          Serial.println("Voice");
-          for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
-              leds[pixel] = CRGB::Blue;
-              FastLED.show();
-              leds[pixel] = CRGB::Black;
-              delay(500);
-           }
-           break;
-        }
-        Serial.flush();
-        case 'O':
-        {
-          Serial.println("Oper");
-          for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
-              leds[pixel] = CRGB::Red;
-              FastLED.show();
-              leds[pixel] = CRGB::Black;
-              delay(500);
-           }
-           break;
-        }
-        Serial.flush();
-      case 'X':
-      {
-         Serial.println("VIP");
-         for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
-              leds[pixel] = CRGB::Green;
-              FastLED.show();
-              leds[pixel] = CRGB::Black;
-              delay(500);
-         }
-         Serial.flush();
-         break;
-      }
-        case 'R':
-        {
-         Serial.println("Root");
-         Serial.flush();
-         for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
-              Serial.println(pixel);
-              leds[pixel] = CRGB::Yellow;
-              FastLED.show();
-              leds[pixel] = CRGB::Black;
-              delay(500); 
-              
-           }
-           Serial.flush();
-           break;
-        }*/
+         
         case '\033':
         {
            Serial.flush(); 
           Serial.println("Escape is impossible"); 
            break;
         }
+        
         case '?':
         {
           Serial.flush();
           Serial.println("Options: [LIMC*]");
          break; 
         }
+        
         default:{
            Serial.flush(); 
           Serial.println("Invalid choice!");
@@ -423,7 +376,7 @@ void loop(){
       } // switch
       
   } // if read
- //} //if Serial 
+ 
 } // loop()
 
 
