@@ -17,6 +17,50 @@
 #define IR_E 10
 #define IR_R A0
 
+void sendMicros(int microsecs)
+{
+    while (microsecs > 0) {
+        // 38 kHz is about 13 microseconds high and 13 microseconds low
+       digitalWrite(IR_E, LOW);  // this takes about 3 microseconds to happen
+       delayMicroseconds(10);         // hang out for 10 microseconds
+       digitalWrite(IR_E, HIGH);   // this also takes about 3 microseconds
+       delayMicroseconds(10);         // hang out for 10 microseconds
+
+       // so 26 microseconds altogether
+       microsecs -= 26;
+  }
+}
+
+void sendShort()
+{
+   sendMicros(1000); 
+
+}
+
+void sendLong()
+{
+  sendMicros(5000);
+}
+
+void send32(uint32_t buf)
+{
+  for(int count=0;count<3;count++) 
+  {
+    for(int i=0;i<32;i++)
+    {
+      if((0x01<<i) & buf)
+      {
+        sendLong();
+      } 
+      else 
+      {
+        sendShort(); 
+      }
+      delayMicroseconds(500);
+    }
+  }
+}
+
 #define BRIGHTNESS 8
 
 #define TERM (char)0xF8
@@ -60,6 +104,8 @@ void setup()
 
 void loop()
 {
+    char ir_data[4];
+    
     char type = 0x0;  // serial input byte 
     char* buff = 0x0; //byte buff
 
@@ -243,6 +289,11 @@ void loop()
         do_display();
         delay(100);
     }
+    
+    //Send IR
+    for(int i=0;i<4;i++)
+      ir_data[i] = EEPROM.read(i);
+    send32((uint32_t)ir_data);
 }
 
 void set_led(int led, char color)
