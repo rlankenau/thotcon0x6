@@ -39,6 +39,10 @@
 
 #define COLOR_STREAM_END    0xF8
 
+int p = 0x0;  // pixel
+uint8_t b = 4;   // brightness
+uint32_t hc = 0x000000; //hex color for pixel
+
 typedef struct eeprom_badge_data_t_stct {
     uint16_t id;
     uint8_t  flags;
@@ -131,6 +135,13 @@ void BBS_show_menu()
               
           case SCREEN_LIGHT: {
               Serial.println("\t\t\t\t-=[Lighting Menu]=-\r\n\t[P]ixel Select\t\t[C]olor Select\t\t[B]rightness Select\r\n\t[D]isplay\t\tBac[K]\r\n\r\n"); //101
+              Serial.print("\tActive pixel: [");
+              Serial.print(p,DEC);
+              Serial.print("]\t\tColor :[0x");
+              Serial.print(hc,HEX);
+              Serial.print("]\tArray Brightness [");
+              Serial.print(b,DEC);
+              Serial.println("]\r\n\r\n");
               break; 
            }
           case SCREEN_SYSOP:     {
@@ -193,9 +204,8 @@ byte BBS_handle_prompt(){
 
 void loop(){
   char type = 0x0;  // serial input byte 
-  uint8_t p = 0x0;  // pixel
-  uint8_t b = 4;   // brightness
-  uint32_t hc = 0x000000; //hex color for pixel
+  char* buff = 0x0; //byte buff
+  
    
   if(Serial)
   {
@@ -272,18 +282,23 @@ void loop(){
         case 'p' :
         case 'P' :
         {
-            
+            Serial.setTimeout(500);
             Serial.print("Select Pixel [0 - 6]:");
             while (!Serial.available()){}
-            p = constrain((uint8_t)Serial.read(),0,6);
+            //if (Serial.read() == '\n')
+                   Serial.readBytesUntil('\n',buff,1);
+                   p =  atoi(buff);
             Serial.println(p);
+            break;
         }
         case 'b' : 
         case 'B' :
         {
+             Serial.print("Enter Brightness [1 - 128]: ");
+             Serial.setTimeout(300);
              while(!Serial.available());
-             b = constrain(Serial.parseInt(),0,255);
-             Serial.print("Setting brightness level ");
+             b = Serial.parseInt();
+             Serial.print("\nSetting brightness level ");
              Serial.println(b,DEC);
              LEDS.setBrightness(b); 
              break; 
