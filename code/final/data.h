@@ -50,7 +50,7 @@
   
   Screen Offset Table
   
-
+  Pointers to screen strings in EEPROM.  Access SCREEN_BLOCK_OFF + SCREEN_xxxx to retrieve the screen pointer.
 */
 
 //Flags
@@ -73,3 +73,11 @@
 
 #define COLOR_STREAM_END    0xF8
 
+
+//SCREEN BYTE OFFSETS
+#define SCREEN_MAIN             1
+#define SCREEN_LIGHT            2
+#define SCREEN_SYSOP            3
+#define SCREEN_MESSAGES         4
+#define SCREEN_SYSINFO          5
+#define SCREEN_COMMANDS         6
