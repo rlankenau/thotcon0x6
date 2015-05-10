@@ -34,7 +34,6 @@ void sendMicros(int microsecs)
 void sendShort()
 {
    sendMicros(1000); 
-
 }
 
 void sendLong()
@@ -44,11 +43,17 @@ void sendLong()
 
 void send32(uint32_t buf)
 {
+  char *bytes = (char *)&buf;
+  uint32_t checksum = 0x00;
+  checksum = bytes[0] + bytes[1] + bytes[2] + bytes[3];
+  char check = checksum & (char)0xFF;
+  
+  
   for(int count=0;count<3;count++) 
   {
     for(int i=0;i<32;i++)
     {
-      if((0x01<<i) & buf)
+      if((0x80000000>>i) & buf)
       {
         sendLong();
       } 
@@ -57,6 +62,18 @@ void send32(uint32_t buf)
         sendShort(); 
       }
       delayMicroseconds(500);
+    }
+  }
+  
+  for(int i=0;i<8;i++)
+  {
+    if((0x80 >> i) & check)
+    {
+      sendLong();
+    } 
+    else 
+    {
+      sendShort();  
     }
   }
 }
