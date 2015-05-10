@@ -138,7 +138,9 @@ void BBS_show_menu()
               Serial.print("\tActive pixel: [");
               Serial.print(p,DEC);
               Serial.print("]\t\tColor :[0x");
-              Serial.print(hc,HEX);
+              Serial.print(leds[p-1].r,HEX);
+              Serial.print(leds[p-1].g,HEX);
+              Serial.print(leds[p-1].b,HEX);
               Serial.print("]\tArray Brightness [");
               Serial.print(b,DEC);
               Serial.println("]\r\n\r\n");
@@ -250,30 +252,40 @@ void loop(){
                    Serial.print("\r\nInput Color value for pixel ");
                    Serial.print(p,DEC);
                    Serial.print(" {Red}: ");
-                   while(Serial.available()){
-                       uint8_t red = Serial.parseInt(); 
-                       Serial.print("\r\n {Green}: ");
-                       uint8_t green = Serial.parseInt(); 
-                       Serial.print("\r\n {Blue}: ");
-                       uint8_t blue = Serial.parseInt(); 
-                        if (Serial.read() == '\n') {
-                               red = 255 - constrain(red, 0, 255);
-                               green = 255 - constrain(green, 0, 255);
-                                blue = 255 - constrain(blue, 0, 255);
-                               leds[p].r = red;
-                               leds[p].g = green;
-                               leds[p].b = blue;
+                   while(!Serial.available());
+                       int red = Serial.parseInt();
+                       red = constrain(red,0,255) ;
+                       Serial.print(red,DEC);
+                       
+                       Serial.print("\t {Green}: ");
+                       while(!Serial.available());
+                       int green = Serial.parseInt();
+                       green = constrain(green,0,255);
+                       Serial.print(green,DEC);
+                        
+                       Serial.print("\t {Blue}: ");
+                       while(!Serial.available());
+                       int blue = Serial.parseInt();
+                        blue = constrain(blue,0,255);
+                       Serial.println(blue,DEC); 
+                       
+                               
+                               leds[p-1].r = red;
+                               leds[p-1].g = green;
+                               leds[p-1].b = blue;
 
                                Serial.print("\r\n Config val: 0x");
                                Serial.print(red, HEX);
                                Serial.print(green, HEX);
                               Serial.println(blue, HEX);
-                             }  
-               
-                       }
-              } 
-              break;
+                              delay(500);
+                              hc=1;
+                   }  
+               break;
         }
+             // } 
+            //  break;
+       
         case 'q' :
         case 'Q': {
              Serial.print("\033[2J");
@@ -282,12 +294,13 @@ void loop(){
         case 'p' :
         case 'P' :
         {
-            Serial.setTimeout(500);
+            Serial.setTimeout(300);
             Serial.print("Select Pixel [0 - 6]:");
             while (!Serial.available()){}
             //if (Serial.read() == '\n')
                    Serial.readBytesUntil('\n',buff,1);
                    p =  atoi(buff);
+                   p = constrain(p,1,6);
             Serial.println(p);
             break;
         }
@@ -298,8 +311,9 @@ void loop(){
              Serial.setTimeout(300);
              while(!Serial.available());
              b = Serial.parseInt();
-             Serial.print("\nSetting brightness level ");
-             Serial.println(b,DEC);
+             b = constrain(b,1,128);
+             Serial.print("\r\nSetting brightness level ");
+             Serial.println(b);
              LEDS.setBrightness(b); 
              break; 
         }
@@ -310,10 +324,12 @@ void loop(){
             {
                if ( p == 0 ){
                   Serial.println("Use [P] to select a pixel!");
+                  delay(1000);
                   break;
                }
                if ( hc == 0 ){
                  Serial.println("Use [C] to set a color value");
+                 delay(1000);
                   break;
                }
               FastLED.show();  
