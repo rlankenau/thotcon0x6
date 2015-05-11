@@ -17,7 +17,96 @@
 #define IR_E 10
 #define IR_R A0
 
-void sendMicros(int microsecs)
+
+/*
+ * microsec - time spent trying to read
+ */
+uint32_t readIR(int32_t microsecs)
+{
+   char input[5];
+   uint32_t checksum = 0x00000000;
+   int pos = 0;
+   int level = HIGH, last_level;
+   int time_in = 0;
+   while (microsecs > 0)
+   {
+      last_level = level;
+      level = digitalRead(IR_R);
+      if(level!=last_level)
+      {
+        
+        if(level == LOW)
+        {
+          //rising - start of a new pulse
+          time_in = 0;
+        } 
+        else
+        {
+          //falling - end of a pulse
+          if(time_in < 2000) {
+             // Short pulse, leave it at 0.
+             pos++;
+          } else if (time_in > 2000) {
+             // long pulse, set it to 1;
+             input[pos/8] |= (0x80 >> pos%8); 
+          }
+          if(pos == 39)
+          {
+            /* Complete code - check checksum. */
+            for(int i=0;i<4;i++)
+            {
+              checksum+=input[i];
+            }
+            if((checksum&0xFF) == (unsigned char)input[4])
+            {
+              uint32_t result;
+              // Success!
+              if(Serial) {
+                Serial.println("Got code!");
+                Serial.print(input[0], HEX);
+                Serial.print(input[1], HEX);
+                Serial.print(input[2], HEX);
+                Serial.print(input[3], HEX);
+                Serial.println();
+              }
+              result = (uint32_t)input;
+              return result;
+            } else {
+               if(Serial)
+              {
+                Serial.println("BAD code!");
+                Serial.print(input[0], HEX);
+                Serial.print(input[1], HEX);
+                Serial.print(input[2], HEX);
+                Serial.print(input[3], HEX);
+                Serial.println();                
+              } 
+            }
+          }
+        }
+      }
+      else
+      {
+        time_in+=13;
+        if(level == HIGH)
+        {
+          // If it's been high for more than 1 ms, we're not in a code.
+          if(time_in > 1000)
+          {
+              //reset
+              memset(input, 0, 5);
+              pos = 0;
+          }
+        }
+      }
+      delayMicroseconds(10);
+      microsecs -= 13;
+
+   }
+   return 0xFFFFFFFF;
+}
+
+void sendMicros(int32_t microsecs)
 {
     while (microsecs > 0) {
         // 38 kHz is about 13 microseconds high and 13 microseconds low
@@ -33,7 +122,7 @@ void sendMicros(int microsecs)
 
 void sendShort()
 {
-   sendMicros(1000); 
+   sendMicros(1500); 
 }
 
 void sendLong()
@@ -63,6 +152,7 @@ void send32(uint32_t buf)
       }
       delayMicroseconds(500);
     }
+    delayMicroseconds(5000);
   }
   
   for(int i=0;i<8;i++)
@@ -75,6 +165,7 @@ void send32(uint32_t buf)
     {
       sendShort();  
     }
+    delayMicroseconds(500);
   }
 }
 
@@ -122,11 +213,10 @@ void setup()
 void loop()
 {
     char ir_data[4];
+    uint32_t ir_in;
     
     char type = 0x0;  // serial input byte 
     char* buff = 0x0; //byte buff
-
-    int got_ir_input = 0;
     
     while(Serial && !terminated_serial)
     {
@@ -296,8 +386,9 @@ void loop()
     }
 
     //Read IR
+    ir_in = readIR(10000000);
 
-    if(got_ir_input) {
+    if(ir_in!=0xFFFFFFFF) {
         // Update EEPROM with IR data
     }
 
