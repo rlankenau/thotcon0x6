@@ -43,12 +43,23 @@ uint32_t readIR(int32_t microsecs)
         else
         {
           //falling - end of a pulse
-          if(time_in < 2000) {
+          if(time_in > 100 && time_in < 300) {
              // Short pulse, leave it at 0.
+             Serial.print("0");
              pos++;
-          } else if (time_in > 2000) {
+          } else if (time_in > 500) {
              // long pulse, set it to 1;
-             input[pos/8] |= (0x80 >> pos%8); 
+             input[pos/8] |= (0x80 >> (pos%8));
+             Serial.print("1");
+             pos++;
+          } else {
+             pos = 0;
+             memset(input, 0, 5);
+             time_in = 0;
+             level = HIGH;
+             last_level = HIGH;
+             Serial.print("Err:");
+             Serial.println(time_in);
           }
           if(pos == 39)
           {
@@ -87,7 +98,7 @@ uint32_t readIR(int32_t microsecs)
       }
       else
       {
-        time_in+=13;
+        time_in+=25;
         if(level == HIGH)
         {
           // If it's been high for more than 1 ms, we're not in a code.
@@ -96,11 +107,14 @@ uint32_t readIR(int32_t microsecs)
               //reset
               memset(input, 0, 5);
               pos = 0;
+              time_in = 0;
+             level = HIGH;
+             last_level = HIGH;
           }
         }
       }
-      delayMicroseconds(10);
-      microsecs -= 13;
+      delayMicroseconds(22);
+      microsecs -= 25;
 
    }
    return 0xFFFFFFFF;
@@ -122,12 +136,12 @@ void sendMicros(int32_t microsecs)
 
 void sendShort()
 {
-   sendMicros(1500); 
+   sendMicros(200); 
 }
 
 void sendLong()
 {
-  sendMicros(5000);
+  sendMicros(600);
 }
 
 void send32(uint32_t buf)
@@ -150,7 +164,7 @@ void send32(uint32_t buf)
       {
         sendShort(); 
       }
-      delayMicroseconds(500);
+      delayMicroseconds(100);
     }
     delayMicroseconds(5000);
   }
@@ -165,7 +179,7 @@ void send32(uint32_t buf)
     {
       sendShort();  
     }
-    delayMicroseconds(500);
+    delayMicroseconds(100);
   }
 }
 
@@ -212,6 +226,7 @@ void setup()
 
 void loop()
 {
+    delayMicroseconds(random(50000,500000));
     char ir_data[4];
     uint32_t ir_in;
     
@@ -392,11 +407,25 @@ void loop()
         // Update EEPROM with IR data
     }
 
+    if(random(1,100) > (95 - (EEPROM.read(3) & 0x3F)))
+    {
+        char chance = EEPROM.read(3);
+        if(chance < (char)0xFF) {
+          chance+=1;
+          EEPROM.write(3, chance);
+        }
+        
+        for(int i=0;i<3;i++) {
+          display_root(random(0,1018));
+        }
+    }
+
     for(int i=0;i<3;i++) 
     {
         do_display();
         delay(100);
     }
+    FastLED.clear();
     
     //Send IR
     for(int i=0;i<4;i++)
