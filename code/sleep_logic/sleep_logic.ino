@@ -31,7 +31,7 @@ ISR(WDT_vect)
 
 void enterSleep(void)
 {
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
   sleep_enable();
   
   /* Now enter sleep mode. */
@@ -88,7 +88,8 @@ void setup()
 
 void loop()
 {
-  if (!Serial){ //everthing that happens when we're not connected is in this branch
+  if (!Serial)
+  { //everthing that happens when we're not connected is in this branch
     
      if(f_wdt == 1)
      {
