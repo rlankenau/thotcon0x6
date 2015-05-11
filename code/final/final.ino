@@ -2,6 +2,11 @@
 #include "FastLED.h"
 #include <IRLib.h>
 #include <avr/power.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
+#include <avr/wdt.h>
+
+#include <avr/interrupt.h>
 
 #include "data.h"
 
@@ -183,7 +188,9 @@ void send32(uint32_t buf)
   }
 }
 
-#define BRIGHTNESS 8
+
+
+#define BRIGHTNESS 4
 
 #define TERM (char)0xF8
 #define SYSOP_BYTE (char)0x03
@@ -202,6 +209,71 @@ uint32_t hc = 0x00000000;
 int serial_init = 0;
 int terminated_serial = 0;
 
+IRrecv My_Receiver(IR_R);
+IRdecode My_Decoder;
+
+void pixel_test()
+{
+
+for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) { 
+     leds[pixel] = CRGB::White;
+      FastLED.show();
+     // leds[pixel] = CRGB::Black;
+      delay(500);
+   }
+   
+ for (uint8_t i = BRIGHTNESS; i < (4 * BRIGHTNESS); i++)
+ {
+      LEDS.setBrightness(i);
+      delay(100);
+      FastLED.show();
+ }
+ for (uint8_t i = (4 * BRIGHTNESS); i > BRIGHTNESS; i--)
+ {
+   LEDS.setBrightness(i);
+      delay(100);
+      FastLED.show();
+ }
+ LEDS.setBrightness(BRIGHTNESS);
+ FastLED.show();
+  
+}
+
+volatile int f_wdt=1;
+
+
+
+
+ISR(WDT_vect)
+{
+  if(f_wdt == 0)
+  {
+    Serial.begin(9600);
+    f_wdt=1;
+  }
+  
+  else
+  {
+    Serial.println("WDT!");
+  }
+}
+
+void enterSleep(void)
+{
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+  sleep_enable();
+  
+  /* Now enter sleep mode. */
+  sleep_mode();
+  
+  /* The program will continue from here after the WDT timeout*/
+  sleep_disable(); /* First thing to do is disable sleep. */
+  
+  /* Re-enable the peripherals. */
+  power_all_enable();
+}
+
+
 void setup()
 {
   int i=0;
@@ -209,10 +281,29 @@ void setup()
   pinMode(IR_E, OUTPUT);
   digitalWrite(IR_E, HIGH);
   
+   ADCSRA = 0;
+  
+  /* 
+  
+  // Clear the reset flag. 
+  MCUSR &= ~(1<<WDRF);
+  
+  // In order to change WDE or the prescaler, we need to
+  // set WDCE (This will allow updates for 4 clock cycles).
+   
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+
+  // set new watchdog timeout prescaler value 
+  WDTCSR = 1<<WDP0 | 1<<WDP3; // 8.0 seconds 
+  
+  // Enable the WD interrupt (note no reset). 
+  WDTCSR |= _BV(WDIE);
+  
+  */
   
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
-  FastLED.setBrightness(128);
+  FastLED.setBrightness(BRIGHTNESS);
   for(i=0;i<NUM_LEDS;i++)
   {
       leds[i] = CRGB::Black;
@@ -221,17 +312,51 @@ void setup()
   
   Serial.setTimeout(500);
   Serial.begin(2400);
+  terminated_serial = 0;
+  pixel_test();
 
 }
 
 void loop()
 {
-    delayMicroseconds(random(50000,500000));
+    //delayMicroseconds(random(50000,500000));  for testing ease
     char ir_data[4];
     uint32_t ir_in;
     
     char type = 0x0;  // serial input byte 
     char* buff = 0x0; //byte buff
+    
+    /*
+    
+    
+    
+    
+    if (!Serial)
+  { //everthing that happens when we're not connected is in this branch
+    
+     if(f_wdt == 1)
+     {
+    // neo blink
+      leds[0] = CRGB::White;
+        FastLED.show();
+       delay(1000);
+      leds[0] = CRGB::Black;
+       FastLED.show();
+    //
+    
+       //  clear the flag. 
+       f_wdt = 0;
+    
+      // Re-enter sleep mode. 
+       enterSleep();
+       }
+    
+    
+    
+    
+    
+    
+    */
     
     while(Serial && !terminated_serial)
     {
@@ -250,8 +375,9 @@ void loop()
         switch (type){
         
         case 'l' :
-        case 'L' : {
-               screen_state = SCREEN_LIGHT;        
+        case 'L' : { 
+              if (screen_state == SCREEN_MAIN) 
+                  screen_state = SCREEN_LIGHT;        
                break;
         }
         
@@ -262,13 +388,15 @@ void loop()
         }
         
         case '*' : {
-               screen_state = SCREEN_SYSOP;
+               if (screen_state == SCREEN_MAIN) 
+                  screen_state = SCREEN_SYSOP;
                break;
         }
         
         case 'i':
         case 'I' : {
-               screen_state = SCREEN_SYSINFO;
+              if (screen_state == SCREEN_MAIN) 
+                  screen_state = SCREEN_SYSINFO;
               break;
         }
         
@@ -323,6 +451,7 @@ void loop()
         case 'p' :
         case 'P' :
         {
+          if (screen_state == SCREEN_LIGHT) {
             Serial.setTimeout(500);
             Serial.print("Select Pixel [1 - 6]:");
             while (!Serial.available()){}
@@ -331,21 +460,50 @@ void loop()
                    p =  atoi(buff);
                    p = constrain(p,1,6);
             Serial.println(p);
-            break;
+          }
+          break;
+          
+        }
+        
+        case 's' :
+        case 'S' :
+        {
+             if (screen_state == SCREEN_SYSOP)
+             {
+                My_Receiver.resume(); 
+           
+                while (!My_Receiver.GetResults(&My_Decoder)); 
+                    Serial.println(F(" Sharks swim best in quiet waves: "));
+                    
+                    My_Decoder.decode();
+                    My_Decoder.DumpResults();
+                    delay(1000);
+                   My_Receiver.resume(); 
+             
+              delay(1000);
+              Serial.println(F("Press any key to store signal "));
+              while(!Serial.available());
+              
+           }
+           break;
         }
         
         case 'b' : 
         case 'B' :
         {
-             Serial.print("Enter Brightness [1 - 128]: ");
+             if (screen_state == SCREEN_LIGHT) {
+             Serial.print(F("Enter Brightness [1 - 128]: "));
              Serial.setTimeout(500);
              while(!Serial.available());
              b = Serial.parseInt();
              b = constrain(b,1,128);
-             Serial.print("\r\nSetting brightness level ");
+             Serial.print(F("\r\nSetting brightness level "));
              Serial.println(b);
              LEDS.setBrightness(b); 
-             break; 
+             }
+             break;
+             
+             
         }
         
         case 'd' :
@@ -354,12 +512,12 @@ void loop()
             if (screen_state == SCREEN_LIGHT)
             {
                if ( p == 0 ){
-                  Serial.println("Use [P] to select a pixel!");
+                  Serial.println(F("Use [P] to select a pixel!"));
                   delay(1000);
                   break;
                }
                if ( hc == 0 ){
-                 Serial.println("Use [C] to set a color value");
+                 Serial.println(F("Use [C] to set a color value"));
                  delay(1000);
                   break;
                }
@@ -386,7 +544,7 @@ void loop()
         case '?':
         {
           Serial.flush();
-          Serial.println("Options: [LIMC*]");
+          Serial.println("Type a letter for you menu choice: [LIMC*]");
          break; 
         }
         
@@ -943,7 +1101,7 @@ void BBS_show_menu()
               break; 
            }
            case SCREEN_COMMANDS: {
-              Serial.println("\t\t\t\t-=[System Commands]=-\r\n\t\t\tP[E]ek/Poke\t\tBac[K]\r\n");
+              Serial.println("\t\t\t\t-=[System Commands]=-\r\n\t\t\t[E]EPROManip\t\tBac[K]\r\n");
               break; 
            }
            default: 
