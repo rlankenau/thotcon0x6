@@ -418,15 +418,17 @@ void loop()
         for(int i=0;i<3;i++) {
           display_root(random(0,1018));
         }
+        delay(1000);  
     }
+
 
     for(int i=0;i<3;i++) 
     {
         do_display();
         delay(100);
     }
-    FastLED.clear();
-    
+    FastLED.clear(true);
+    FastLED.show();
     //Send IR
     for(int i=0;i<4;i++)
       ir_data[i] = EEPROM.read(i);
@@ -503,7 +505,7 @@ void display_root(int offset)
         pixel = random(0, NUM_LEDS);
         set_led(pixel, 0x00);
         curr_offset++;
-    } while(curr_offset < 0xD4);
+    } while(curr_offset < 0x03FF);
 }
 
 void display_oper(int offset)
