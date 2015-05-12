@@ -259,7 +259,7 @@ ISR(WDT_vect)
 
 void enterSleep(void)
 {
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+  set_sleep_mode(SLEEP_MODE_ADC);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
   sleep_enable();
   
   /* Now enter sleep mode. */
@@ -355,7 +355,7 @@ void loop()
        f_wdt = 0;
     
       // Re-enter sleep mode. 
-       enterSleep();
+       //enterSleep();
        }
     
     
@@ -567,7 +567,8 @@ void loop()
 
     //Read IR
     //ir_in = readIR(10000000);
-    enterSleep();
+    //enterSleep();
+    delay(30000);
 
     //if(ir_in!=0xFFFFFFFF) {
         // Update EEPROM with IR data
