@@ -1,12 +1,7 @@
 #include <EEPROM.h>
 #include "FastLED.h"
 #include <IRLib.h>
-#include <avr/power.h>
-#include <avr/sleep.h>
-#include <avr/power.h>
-#include <avr/wdt.h>
-
-#include <avr/interrupt.h>
+#include <LowPower.h>
 
 #include "data.h"
 
@@ -21,174 +16,6 @@
 #define NUM_LEDS 6
 #define IR_E 10
 #define IR_R A0
-
-
-/*
- * microsec - time spent trying to read
- */
-uint32_t readIR(int32_t microsecs)
-{
-   char input[5];
-   uint32_t checksum = 0x00000000;
-   int pos = 0;
-   int level = HIGH, last_level;
-   int time_in = 0;
-   while (microsecs > 0)
-   {
-      last_level = level;
-      level = digitalRead(IR_R);
-      if(level!=last_level)
-      {
-        
-        if(level == LOW)
-        {
-          //rising - start of a new pulse
-          time_in = 0;
-        } 
-        else
-        {
-          //falling - end of a pulse
-          if(time_in > 100 && time_in < 300) {
-             // Short pulse, leave it at 0.
-             Serial.print("0");
-             pos++;
-          } else if (time_in > 500) {
-             // long pulse, set it to 1;
-             input[pos/8] |= (0x80 >> (pos%8));
-             Serial.print("1");
-             pos++;
-          } else {
-             pos = 0;
-             memset(input, 0, 5);
-             time_in = 0;
-             level = HIGH;
-             last_level = HIGH;
-             Serial.print("Err:");
-             Serial.println(time_in);
-          }
-          if(pos == 39)
-          {
-            /* Complete code - check checksum. */
-            for(int i=0;i<4;i++)
-            {
-              checksum+=input[i];
-            }
-            if((checksum&0xFF) == (unsigned char)input[4])
-            {
-              uint32_t result;
-              // Success!
-              if(Serial) {
-                Serial.println("Got code!");
-                Serial.print(input[0], HEX);
-                Serial.print(input[1], HEX);
-                Serial.print(input[2], HEX);
-                Serial.print(input[3], HEX);
-                Serial.println();
-              }
-              result = (uint32_t)input;
-              return result;
-            } else {
-               if(Serial)
-              {
-                Serial.println("BAD code!");
-                Serial.print(input[0], HEX);
-                Serial.print(input[1], HEX);
-                Serial.print(input[2], HEX);
-                Serial.print(input[3], HEX);
-                Serial.println();                
-              } 
-            }
-          }
-        }
-      }
-      else
-      {
-        time_in+=25;
-        if(level == HIGH)
-        {
-          // If it's been high for more than 1 ms, we're not in a code.
-          if(time_in > 1000)
-          {
-              //reset
-              memset(input, 0, 5);
-              pos = 0;
-              time_in = 0;
-             level = HIGH;
-             last_level = HIGH;
-          }
-        }
-      }
-      delayMicroseconds(22);
-      microsecs -= 25;
-
-   }
-   return 0xFFFFFFFF;
-}
-
-void sendMicros(int32_t microsecs)
-{
-    while (microsecs > 0) {
-        // 38 kHz is about 13 microseconds high and 13 microseconds low
-       digitalWrite(IR_E, LOW);  // this takes about 3 microseconds to happen
-       delayMicroseconds(10);         // hang out for 10 microseconds
-       digitalWrite(IR_E, HIGH);   // this also takes about 3 microseconds
-       delayMicroseconds(10);         // hang out for 10 microseconds
-
-       // so 26 microseconds altogether
-       microsecs -= 26;
-  }
-}
-
-void sendShort()
-{
-   sendMicros(200); 
-}
-
-void sendLong()
-{
-  sendMicros(600);
-}
-
-void send32(uint32_t buf)
-{
-  char *bytes = (char *)&buf;
-  uint32_t checksum = 0x00;
-  checksum = bytes[0] + bytes[1] + bytes[2] + bytes[3];
-  char check = checksum & (char)0xFF;
-  
-  
-  for(int count=0;count<3;count++) 
-  {
-    for(int i=0;i<32;i++)
-    {
-      if((0x80000000>>i) & buf)
-      {
-        sendLong();
-      } 
-      else 
-      {
-        sendShort(); 
-      }
-      delayMicroseconds(100);
-    }
-    delayMicroseconds(5000);
-  }
-  
-  for(int i=0;i<8;i++)
-  {
-    if((0x80 >> i) & check)
-    {
-      sendLong();
-    } 
-    else 
-    {
-      sendShort();  
-    }
-    delayMicroseconds(100);
-  }
-}
-
-
 
 #define BRIGHTNESS 4
 
@@ -240,39 +67,6 @@ for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) {
 
 volatile int f_wdt=1;
 
-
-
-
-ISR(WDT_vect)
-{
-  if(f_wdt == 0)
-  {
-    Serial.begin(9600);
-    f_wdt=1;
-  }
-  
-  else
-  {
-    Serial.println("WDT!");
-  }
-}
-
-void enterSleep(void)
-{
-  set_sleep_mode(SLEEP_MODE_ADC);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
-  sleep_enable();
-  
-  /* Now enter sleep mode. */
-  sleep_mode();
-  
-  /* The program will continue from here after the WDT timeout*/
-  sleep_disable(); /* First thing to do is disable sleep. */
-  
-  /* Re-enable the peripherals. */
-  power_all_enable();
-}
-
-
 void setup()
 {
   char seed[4];
@@ -285,25 +79,7 @@ void setup()
   digitalWrite(IR_E, HIGH);
   
    ADCSRA = 0;
-  
-  /* 
-  
-  // Clear the reset flag. 
-  MCUSR &= ~(1<<WDRF);
-  
-  // In order to change WDE or the prescaler, we need to
-  // set WDCE (This will allow updates for 4 clock cycles).
-   
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
 
-  // set new watchdog timeout prescaler value 
-  WDTCSR = 1<<WDP0 | 1<<WDP3; // 8.0 seconds 
-  
-  // Enable the WD interrupt (note no reset). 
-  WDTCSR |= _BV(WDIE);
-  
-  */
-  
   //Setup NeoPixel strip, turn everything off.
   FastLED.addLeds<NEOPIXEL, STRAND>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
@@ -333,38 +109,6 @@ void loop()
     char type = 0x0;  // serial input byte 
     char* buff = 0x0; //byte buff
     
-    /*
-    
-    
-    
-    
-    if (!Serial)
-  { //everthing that happens when we're not connected is in this branch
-    
-     if(f_wdt == 1)
-     {
-    // neo blink
-      leds[0] = CRGB::White;
-        FastLED.show();
-       delay(1000);
-      leds[0] = CRGB::Black;
-       FastLED.show();
-    //
-    
-       //  clear the flag. 
-       f_wdt = 0;
-    
-      // Re-enter sleep mode. 
-       //enterSleep();
-       }
-    
-    
-    
-    
-    
-    
-    */
-    
     while(Serial && !terminated_serial)
     {
         Serial.flush();
@@ -374,10 +118,8 @@ void loop()
         // wait for the strokes
         BBS_display_footer(); 
         type = BBS_handle_prompt();
-      
        
         Serial.println(type);
-      
         
         switch (type){
         
@@ -531,7 +273,7 @@ void loop()
               FastLED.show();  
            }
             else {
-              Serial.println("Invalid Entry!");
+              Serial.println(F("Invalid Entry!"));
               Serial.flush();
             }
           
@@ -544,38 +286,49 @@ void loop()
         case '\033':
         {
            Serial.flush(); 
-          Serial.println("Escape is impossible"); 
+          Serial.println(F("Escape is impossible")); 
            break;
         }
         
         case '?':
         {
           Serial.flush();
-          Serial.println("Type a letter for you menu choice: [LIMC*]");
+          Serial.println(F("Type a letter for you menu choice: [LIMC*]"));
          break; 
         }
         
         default:{
            Serial.flush(); 
-          Serial.println("Invalid choice!");
+          Serial.println(F("Invalid choice!"));
           
            break;
         }
       } // switch
 
     }
-
-    //Read IR
-    //ir_in = readIR(10000000);
-    //enterSleep();
-    delay(30000);
-
-    //if(ir_in!=0xFFFFFFFF) {
-        // Update EEPROM with IR data
-    //}
+    
+    {
+        int count = random(6,12);
+        for(int i=0;i<count;i++) {
+            LowPower.idle(SLEEP_8S, ADC_OFF, TIMER4_OFF, TIMER3_OFF, TIMER1_OFF, TIMER0_OFF, SPI_OFF, USART1_OFF, TWI_OFF, USB_OFF);
+        }
+    }
 
     if(random(1,100) > (95 - (EEPROM.read(3) & 0x3F)))
     {
+
+        int badge_type = EEPROM.read(2);
+        if(badge_type & FLAG_BTYPE_HACKER)
+        {
+            if(random(0,2) >= 1) {
+                badge_type |= FLAG_MODE_BLUE;
+
+            } else {
+                badge_type |= FLAG_MODE_RED;
+            }
+            EEPROM.write(2, badge_type);
+        } 
+
         char chance = EEPROM.read(3);
         if(chance < (char)0xFF) {
           chance+=1;
@@ -589,17 +342,15 @@ void loop()
     }
 
 
-    for(int i=0;i<3;i++) 
-    {
-        do_display();
-        delay(100);
-    }
+    do_display();
+    delay(100);
+
     FastLED.clear(true);
     FastLED.show();
     //Send IR
-    for(int i=0;i<4;i++)
-      ir_data[i] = EEPROM.read(i);
-    send32((uint32_t)ir_data);
+    //for(int i=0;i<4;i++)
+      //ir_data[i] = EEPROM.read(i);
+    //send32((uint32_t)ir_data);
 }
 
 void set_led(int led, char color)
