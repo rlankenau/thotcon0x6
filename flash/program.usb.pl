@@ -42,7 +42,7 @@ do {
         print ".";
     } while ($port eq "");
     sleep 1;
-    if (system("sudo $progstr -C$dudeconf -v -patmega32u4 -cstk500v1 -b19200 -P$port @ARGV") == 0)
+    if (system("sudo $progstr -C$dudeconf -v -patmega32u4 -cavr109 -b57600 -P$port @ARGV") == 0)
     {
         print "\nSuccess!\n";
         exit;

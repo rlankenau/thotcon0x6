@@ -202,11 +202,10 @@ CRGB leds [NUM_LEDS];
 uint8_t screen_state = SCREEN_MAIN;
 int peekAddress = 3;
 int peekLen = 32;
-int p = 0x1;
+uint8_t p = 0x1;
 uint8_t b = 4;
-uint32_t hc = 0x00000000;
+uint8_t hc = 0x00;
 
-int serial_init = 0;
 int terminated_serial = 0;
 
 IRrecv My_Receiver(IR_R);
@@ -234,7 +233,7 @@ for(uint8_t pixel = 0; pixel < NUM_LEDS; pixel++) {
       delay(100);
       FastLED.show();
  }
- LEDS.setBrightness(BRIGHTNESS);
+ LEDS.setBrightness(32);
  FastLED.show();
   
 }
@@ -276,6 +275,10 @@ void enterSleep(void)
 
 void setup()
 {
+  char seed[4];
+  for(int i=0;i<4;i++)
+    seed[i] = EEPROM.read(i);
+  randomSeed((long)seed);
   int i=0;
   pinMode(IR_R, INPUT_PULLUP);
   pinMode(IR_E, OUTPUT);
@@ -314,6 +317,10 @@ void setup()
   Serial.begin(2400);
   terminated_serial = 0;
   pixel_test();
+
+  do_display();
+  FastLED.clear(true);
+  FastLED.show();
 
 }
 
@@ -559,11 +566,12 @@ void loop()
     }
 
     //Read IR
-    ir_in = readIR(10000000);
+    //ir_in = readIR(10000000);
+    enterSleep();
 
-    if(ir_in!=0xFFFFFFFF) {
+    //if(ir_in!=0xFFFFFFFF) {
         // Update EEPROM with IR data
-    }
+    //}
 
     if(random(1,100) > (95 - (EEPROM.read(3) & 0x3F)))
     {
