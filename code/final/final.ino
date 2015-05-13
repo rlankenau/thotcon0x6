@@ -308,7 +308,8 @@ void loop()
     }
     
     {
-        int count = random(6,12);
+        delay(1000);
+	int count = random(90,180);
         for(int i=0;i<count;i++) {
             LowPower.idle(SLEEP_8S, ADC_OFF, TIMER4_OFF, TIMER3_OFF, TIMER1_OFF, TIMER0_OFF, SPI_OFF, USART1_OFF, TWI_OFF, USB_OFF);
         }
