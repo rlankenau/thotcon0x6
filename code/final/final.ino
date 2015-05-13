@@ -818,7 +818,7 @@ void BBS_show_menu()
          switch (screen_state){
            case SCREEN_MAIN:
            {
-              Serial.println("\t\t\t\t\t-=[Main Menu]=-\r\n\t[L]ighting Control\t\tSystem [I]nfo\t\t[*] Sysop Menu\r\n\t[M]essage Base\t\t\t[C]ommmands\t\t[Q]uit\r\n\r\n"); //115
+              Serial.println("\t\t\t\t\t-=[Main Menu]=-\r\n\t[L]ighting Control\t\tSystem [I]nfo\t\t[*] Sysop Menu\r\n\t\t\t[C]ommmands\t\t[Q]uit\r\n\r\n"); //115
               break; 
            }
               
@@ -837,7 +837,7 @@ void BBS_show_menu()
            }
           case SCREEN_SYSOP:     {
               if (EEPROM.read(SYSOP_BYTE) & SYSOP_BIT){
-                 Serial.println("\t\t\t\tBBS SYSOP ACCESS GRANTED!!\r\n\tIR [S]hark\t\tIR Pla[Y]\t\tPoo[F]\r\n\t\t\t\tBac[K]");
+                 Serial.println("\t\t\t\tBBS SYSOP ACCESS GRANTED!!\r\n\tIR [S]hark\t\t\r\n\t\t\t\tBac[K]");
               }
               else{
                  screen_state = SCREEN_MAIN;
