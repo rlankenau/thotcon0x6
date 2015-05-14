@@ -74,7 +74,7 @@ void setup()
     seed[i] = EEPROM.read(i);
   randomSeed((long)seed);
   int i=0;
-  pinMode(IR_R, INPUT_PULLUP);
+  pinMode(IR_R, INPUT);
   pinMode(IR_E, OUTPUT);
   digitalWrite(IR_E, HIGH);
   
